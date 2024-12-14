@@ -1,4 +1,4 @@
-  local player = game.Players.LocalPlayer
+   local player = game.Players.LocalPlayer
                 local playerGui = player.PlayerGui
                 
                 local gameIdsToWaitFor = {15186202290, 9825515356, 84366677940861, 77369032494150, 132023669786646}  
@@ -1053,195 +1053,168 @@
                 
                 local LastTarget = nil
                 
-                
                 local function IsVisible(targetPosition)
-                   local character = game.Players.LocalPlayer.Character
-                   if not character then return false end
-                
-                   local origin = character.Head.Position
-                   local direction = (targetPosition - origin).Unit * 1000
-                
-                   local rayParams = RaycastParams.new()
-                   rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-                   rayParams.FilterDescendantsInstances = {character}
-                
-                   local success, raycastResult = pcall(function()
-                       return workspace:Raycast(origin, direction, rayParams)
-                   end)
-                
-                   return success and raycastResult and (raycastResult.Position - targetPosition).Magnitude < 5
+                    local character = game.Players.LocalPlayer.Character
+                    if not character then return false end
+                    
+                    local origin = character.Head.Position
+                    local direction = (targetPosition - origin).Unit * 1000
+                    
+                    local rayParams = RaycastParams.new()
+                    rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+                    rayParams.FilterDescendantsInstances = {character}
+                    
+                    local success, raycastResult = pcall(function()
+                        return workspace:Raycast(origin, direction, rayParams)
+                    end)
+                    
+                    return success and raycastResult and (raycastResult.Position - targetPosition).Magnitude < 5
                 end
                 
                 RunService.RenderStepped:Connect(function()
-                   local character = game.Players.LocalPlayer.Character
-                   if character and character:FindFirstChild("Humanoid") then
-                       local humanoid = character.Humanoid
+                    local character = game.Players.LocalPlayer.Character
+                    if character and character:FindFirstChild("Humanoid") then
+                        local humanoid = character.Humanoid
+                        
+                        local success, _ = pcall(function()
+                            if humanoid.Health <= 1 then
+                                TargetPlayer = nil
+                                IsTargeting = false
+                                LastTarget = nil
+                                return
+                            end
+                        end)
+                    end
                 
-                     
-                       local success, _ = pcall(function()
-                           if humanoid.Health <= 1 then
-                               TargetPlayer = nil
-                               IsTargeting = false
-                               LastTarget = nil
-                               return
-                           end
-                       end)
-                   end
+                    if shared.Global['Silent'].Enabled and IsTargeting then
+                        if TargetPlayer then
+                            if TargetPlayer.Character then
+                                local targetPos = TargetPlayer.Character.Head.Position
+                                
+                                local success, _ = pcall(function()
+                                    if TargetPlayer.Character.Humanoid.Health < 1 then
+                                        TargetPlayer = nil
+                                        IsTargeting = false
+                                        LastTarget = nil
+                                        return
+                                    end
+                                end)
                 
-                   if shared.Global['Silent'].Enabled and IsTargeting then
-                       if TargetPlayer then
-                           if TargetPlayer.Character then
-                               local targetPos = TargetPlayer.Character.Head.Position
+                                local success2, _ = pcall(function()
+                                    if Death(TargetPlayer) then
+                                        TargetPlayer = nil
+                                        IsTargeting = false
+                                        LastTarget = nil
+                                        return
+                                    end
+                                end)
                 
-                             
-                               local success, _ = pcall(function()
-                                   if TargetPlayer.Character.Humanoid.Health < 1 then
-                                       TargetPlayer = nil
-                                       IsTargeting = false
-                                       LastTarget = nil
-                                       return
-                                   end
-                               end)
+                                local success3, closestPart, closestPoint = pcall(function()
+                                    if not IsVisible(targetPos) then
+                                        IsTargeting = false
+                                        LastTarget = TargetPlayer
+                                        return
+                                    end
+                                    return GetClosestHitPoint(TargetPlayer.Character)
+                                end)
                 
-                             
-                               local success2, _ = pcall(function()
-                                   if Death(TargetPlayer) then
-                                       TargetPlayer = nil
-                                       IsTargeting = false
-                                       LastTarget = nil
-                                       return
-                                   end
-                               end)
-                
-                             
-                               local success3, closestPart, closestPoint = pcall(function()
-                                   if not IsVisible(targetPos) then
-                                       IsTargeting = false
-                                       LastTarget = TargetPlayer
-                                       return
-                                   end
-                                   return GetClosestHitPoint(TargetPlayer.Character)
-                               end)
-                
-                               if success3 and closestPart and closestPoint then
-                                   local velocity = GetVelocity(TargetPlayer, closestPart.Name)
-                
-                                   local TimeX = shared.Global['Silent'].Prediction.X
-                                   local TimeY = shared.Global['Silent'].Prediction.Y
-                                   local TimeZ = shared.Global['Silent'].Prediction.Z
-                                   
-                                   local adjustedVelocity = velocity * Vector3.new(TimeX, TimeY, TimeZ)
-                
-                                 
-                                   local success4, _ = pcall(function()
-                                       Replicated_Storage[RemoteEvent]:FireServer(Argument, closestPoint + adjustedVelocity)
-                                   end)
-                               end
-                           end
-                       end
-                   elseif LastTarget and LastTarget.Character then
-                       local lastTargetPos = LastTarget.Character.Head.Position
-                
-                      
-                       local success5, _ = pcall(function()
-                           if IsVisible(lastTargetPos) then
-                               TargetPlayer = LastTarget
-                               IsTargeting = true
-                               LastTarget = nil
-                           end
-                       end)
-                   else
-                    
-                   end
+                                if success3 and closestPart and closestPoint then
+                                    local velocity = GetVelocity(TargetPlayer, closestPart.Name)
+                                    local TimeX = shared.Global['Silent'].Prediction.X
+                                    local TimeY = shared.Global['Silent'].Prediction.Y
+                                    local TimeZ = shared.Global['Silent'].Prediction.Z
+                                    
+                                    local adjustedVelocity = velocity * Vector3.new(TimeX, TimeY, TimeZ)
+                                    
+                                    local success4, _ = pcall(function()
+                                        Replicated_Storage[RemoteEvent]:FireServer(Argument, closestPoint + adjustedVelocity)
+                                    end)
+                                end
+                            end
+                        end
+                    elseif LastTarget and LastTarget.Character then
+                        local lastTargetPos = LastTarget.Character.Head.Position
+                        
+                        local success5, _ = pcall(function()
+                            if IsVisible(lastTargetPos) then
+                                TargetPlayer = LastTarget
+                                IsTargeting = true
+                                LastTarget = nil
+                            end
+                        end)
+                    end
                 end)
                 
                 task.spawn(function()
-                   while task.wait(0.1) do
-                       if shared.Global['Silent'].Enabled then
-                        
-                       end
-                   end
+                    while task.wait(0.1) do
+                        if shared.Global['Silent'].Enabled then
+                            -- Add additional checks here if necessary
+                        end
+                    end
                 end)
                 
-                
-                
-                
-                
                 local function HookTool(tool)
-                   if tool:IsA("Tool") then
-                       tool.Activated:Connect(function()
-                           if tick() - lastToolUse > 0.1 then  
-                               lastToolUse = tick()
+                    if tool:IsA("Tool") then
+                        tool.Activated:Connect(function()
+                            if tick() - lastToolUse > 0.1 then  
+                                lastToolUse = tick()
+                                
+                                local success, target = pcall(function()
+                                    return TargetPlayer
+                                end)
+                                
+                                if success and target and target.Character then
+                                    local success2, closestPart, closestPoint = pcall(function()
+                                        return GetClosestHitPoint(target.Character)
+                                    end)
                 
-                              
-                               local success, target = pcall(function()
-                                   return TargetPlayer
-                               end)
+                                    if success2 and closestPart and closestPoint then
+                                        local success3, velocity = pcall(function()
+                                            return GetVelocity(target, closestPart.Name)
+                                        end)
                 
-                               if success and target and target.Character then
-                                 
-                                   local success2, closestPart, closestPoint = pcall(function()
-                                       return GetClosestHitPoint(target.Character)
-                                   end)
-                
-                                   if success2 and closestPart and closestPoint then
-                                    
-                                       local success3, velocity = pcall(function()
-                                           return GetVelocity(target, closestPart.Name)
-                                       end)
-                
-                                       if success3 and velocity then
-                                           local TimeX = shared.Global['Silent'].Prediction.X
-                                           local TimeY = shared.Global['Silent'].Prediction.Y
-                                           local TimeZ = shared.Global['Silent'].Prediction.Z
-                                           
-                                           local adjustedVelocity = velocity * Vector3.new(TimeX, TimeY, TimeZ)
-                                           
-                                           
-                                           local success4, _ = pcall(function()
-                                               Replicated_Storage[RemoteEvent]:FireServer(Argument, closestPoint + adjustedVelocity)
-                                           end)
-                                       end
-                                   end
-                               end
-                           end
-                       end)
-                   end
+                                        if success3 and velocity then
+                                            local TimeX = shared.Global['Silent'].Prediction.X
+                                            local TimeY = shared.Global['Silent'].Prediction.Y
+                                            local TimeZ = shared.Global['Silent'].Prediction.Z
+                                            
+                                            local adjustedVelocity = velocity * Vector3.new(TimeX, TimeY, TimeZ)
+                                            
+                                            local success4, _ = pcall(function()
+                                                Replicated_Storage[RemoteEvent]:FireServer(Argument, closestPoint + adjustedVelocity)
+                                            end)
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                    end
                 end
                 
                 local function onCharacterAdded(character)
-                   character.ChildAdded:Connect(function(child)
-                       
-                       local success, _ = pcall(function()
-                           HookTool(child)
-                       end)
-                   end)
-                   
-                   
-                   for _, tool in pairs(character:GetChildren()) do
-                       local success, _ = pcall(function()
-                           HookTool(tool)
-                       end)
-                   end
+                    character.ChildAdded:Connect(function(child)
+                        local success, _ = pcall(function()
+                            HookTool(child)
+                        end)
+                    end)
+                    
+                    for _, tool in pairs(character:GetChildren()) do
+                        local success, _ = pcall(function()
+                            HookTool(tool)
+                        end)
+                    end
                 end
-                
                 
                 local success, _ = pcall(function()
-                   Local_Player.CharacterAdded:Connect(onCharacterAdded)
+                    Local_Player.CharacterAdded:Connect(onCharacterAdded)
                 end)
                 
-                
                 if Local_Player.Character then
-                   pcall(function()
-                       onCharacterAdded(Local_Player.Character)
-                   end)
+                    pcall(function()
+                        onCharacterAdded(Local_Player.Character)
+                    end)
                 end
-                
-                
-                
-                
-                end
-                
+            end
                 
                 if table.find(gameIdsToWaitFor, currentGameId) then
                 local settingsFrame = findSettingsFrame(playerGui)
@@ -1250,17 +1223,18 @@
                 settingsFrame:GetPropertyChangedSignal("Visible"):Connect(function()
                  if settingsFrame.Visible and not scriptExecuted then
                      scriptExecuted = true
-                     handleSettingsOpened()  -- Call the handleSettingsOpened function when the Settings frame is visible
+                     handleSettingsOpened()  
                  end
                 end)
                 else
-                -- Settings frame not found, handle it directly
+               
                 handleSettingsOpened()
                 end
                 else
-                -- Directly call handleSettingsOpened if game ID is not in the list
+                
                 handleSettingsOpened()
                 end
+                
                 
 
 
