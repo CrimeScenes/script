@@ -267,27 +267,40 @@
                 
                 local isRightMouseButtonDown = false  
                 
-              
                 local whitelist = shared.Global.Core.Checks.Whitelist
                 
-               
+                -- Threshold for determining first-person (the camera is close to the character)
+                local FIRST_PERSON_THRESHOLD = 5 -- Camera within 5 studs of the player is considered first-person
+                local THIRD_PERSON_THRESHOLD = 10 -- Camera beyond 10 studs is considered third-person
+                
+                -- Function to determine if the player is in first-person mode
                 local function IsFirstPerson()
-                    local character = LocalPlayer.Character
-                    if character and character:FindFirstChild("Head") then
-                        local cameraDistance = (Camera.CFrame.Position - character.Head.Position).Magnitude
-                        return cameraDistance < 2
+                    local playerPosition = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if playerPosition then
+                        local cameraPosition = Camera.CFrame.Position
+                        local distance = (cameraPosition - playerPosition.Position).Magnitude
+                        return distance < FIRST_PERSON_THRESHOLD
                     end
                     return false
                 end
                 
-               
+                -- Function to determine if the player is in third-person mode
+                local function IsThirdPerson()
+                    local playerPosition = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if playerPosition then
+                        local cameraPosition = Camera.CFrame.Position
+                        local distance = (cameraPosition - playerPosition.Position).Magnitude
+                        return distance > THIRD_PERSON_THRESHOLD
+                    end
+                    return false
+                end
+                
                 local function UpdateFOV()
-                   
+                    -- You can update the FOV here if needed, but it's not necessary for the logic
                 end
                 
                 RunService.RenderStepped:Connect(UpdateFOV)
                 
-               
                 local function ClosestPlrFromMouse()
                     local Target, Closest = nil, math.huge
                     local enabled = shared.Global.Core.Enabled  
@@ -295,9 +308,7 @@
                 
                     for _, player in pairs(Players:GetPlayers()) do
                         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                            
                             if enabled and table.find(whitelist, player.Name) then
-                               
                                 break
                             end
                 
@@ -313,9 +324,6 @@
                     return Target
                 end
                 
-                
-                
-              
                 local function GetClosestBodyPart(character)
                     local ClosestDistance = math.huge
                     local BodyPart = nil
@@ -341,7 +349,6 @@
                     return TargetPlayer
                 end
                 
-               
                 Mouse.Button2Down:Connect(function()
                     if shared.Global.Camera.MouseButton2 then
                         isRightMouseButtonDown = true
@@ -370,13 +377,11 @@
                                             end
                                         end
                                     else
-                                       
                                         TargetPlayer = nil
                                         IsTargeting = false
                                     end
                                 end
                             else
-                              
                                 local initialTarget = ClosestPlrFromMouse()
                                 if initialTarget and initialTarget.Character and initialTarget.Character:FindFirstChildOfClass("Humanoid").Health >= 1 then
                                     IsTargeting = true
@@ -392,41 +397,34 @@
                     end
                 end)
                 
-               
                 local function IsAlignedWithCamera(targetPlayer)
                     if targetPlayer and targetPlayer.Character then
                         local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
                         local cameraPosition = Camera.CFrame.Position
                         local direction = (targetPosition - cameraPosition).unit
-                        local targetDirection = (Camera.CFrame.LookVector).unit
+                        local targetDirection = Camera.CFrame.LookVector.unit
                         return direction:Dot(targetDirection) > 0.9
                     end
                     return false
                 end
-                
                 
                 local function GetDistanceFromMouse(bodyPart)
                     local mousePosition = game:GetService("Players").LocalPlayer:GetMouse().Hit.p
                     return (bodyPart.Position - mousePosition).Magnitude
                 end
                 
-              
                 RunService.RenderStepped:Connect(function()
                     if IsTargeting and TargetPlayer and TargetPlayer.Character then
                         if TargetPlayer.Character:FindFirstChildOfClass("Humanoid") and TargetPlayer.Character.Humanoid.Health < 2 then
-                          
                             TargetPlayer = nil
                             IsTargeting = false
                             return
                         end
                 
                         if shared.Global.Camera.Enabled then
-                         
                             if shared.Global.Camera.MouseButton2 then
-                             
                                 if isRightMouseButtonDown then
                                     if shared.Global.Camera.Configurations.ThirdPerson == false then
-                                      
                                         if IsFirstPerson() then
                                             if IsAlignedWithCamera(TargetPlayer) then
                                                 local head = TargetPlayer.Character:FindFirstChild("Head")
@@ -485,9 +483,7 @@
                                     end
                                 end
                             else
-                               
                                 if shared.Global.Camera.Configurations.ThirdPerson == false then
-                                 
                                     if IsFirstPerson() then
                                         if IsAlignedWithCamera(TargetPlayer) then
                                             local head = TargetPlayer.Character:FindFirstChild("Head")
@@ -548,6 +544,8 @@
                         end
                     end
                 end)
+                
+                
                 
                
                 
@@ -1263,6 +1261,7 @@
                 -- Directly call handleSettingsOpened if game ID is not in the list
                 handleSettingsOpened()
                 end
+                
 
 
 
